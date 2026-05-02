@@ -1,23 +1,5 @@
 import { getPreferenceValues } from "@raycast/api";
 
-// Mirror of the `preferences` array in `package.json`. Centralized so every
-// module reads the user's configuration through the same typed view.
-export interface Preferences {
-  instance?: string;
-  authType?: "pat" | "oauth";
-  token?: string;
-  oauthClientId?: string;
-  cirefreshinterval?: string;
-  primaryaction?: string;
-  poptoroot?: boolean;
-  listdetails?: boolean;
-  excludeTodoAuthorUsernames?: string;
-  ignorecerts?: boolean;
-  customcacert?: string;
-  customcert?: string;
-  includeEpicAncestor?: boolean;
-}
-
 const DEFAULT_INSTANCE = "https://gitlab.com";
 
 // OAuth scopes requested during the PKCE flow. Not user-configurable: the
@@ -31,7 +13,7 @@ export function getPrefs(): Preferences {
 }
 
 export function getInstance(prefs: Preferences = getPrefs()): string {
-  return (prefs.instance?.trim() || DEFAULT_INSTANCE).replace(/\/+$/, "");
+  return (prefs.instance.trim() || DEFAULT_INSTANCE).replace(/\/+$/, "");
 }
 
 export function isOAuthEnabled(prefs: Preferences = getPrefs()): boolean {

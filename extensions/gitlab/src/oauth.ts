@@ -28,11 +28,11 @@ let inflightAuthorizationFlow: Promise<string> | null = null;
 export async function authorize(): Promise<string> {
   const tokenSet = await client.getTokens();
   if (tokenSet?.accessToken) {
-    if (!(tokenSet.refreshToken && tokenSet.isExpired())) {
-      return tokenSet.accessToken;
+    if (!tokenSet.isExpired()) return tokenSet.accessToken;
+    if (tokenSet.refreshToken) {
+      const refreshed = await tryRefresh();
+      if (refreshed) return refreshed;
     }
-    const refreshed = await tryRefresh();
-    if (refreshed) return refreshed;
   }
   return runAuthorizationFlow();
 }

@@ -1,5 +1,6 @@
-import { ApolloClient, HttpLink, InMemoryCache, NormalizedCacheObject } from "@apollo/client";
+import { ApolloClient, ApolloLink, fromPromise, HttpLink, InMemoryCache, NormalizedCacheObject } from "@apollo/client";
 import { setContext } from "@apollo/client/link/context";
+import { onError } from "@apollo/client/link/error";
 import fetch from "cross-fetch";
 
 import { getHttpAgent, GitLab } from "./gitlabapi";
@@ -56,10 +57,20 @@ export function createGitLabGQLClient(): GitLabGQL {
     };
   });
 
+  // Mirrors the REST 401 retry in gitlabapi.ts: on OAuth 401, force-refresh
+  // the access token and replay the operation once. The retry flag on the
+  // operation context prevents loops if the replay also 401s.
+  const errorLink = onError(({ networkError, operation, forward }) => {
+    if (!networkError || !("statusCode" in networkError) || networkError.statusCode !== 401) return;
+    if (!isOAuthEnabled() || operation.getContext().gitlabAuthRetried) return;
+    operation.setContext({ gitlabAuthRetried: true });
+    return fromPromise(refreshToken()).flatMap(() => forward(operation));
+  });
+
   return new GitLabGQL(
     instance,
     new ApolloClient({
-      link: authLink.concat(httpLink),
+      link: ApolloLink.from([errorLink, authLink, httpLink]),
       cache: new InMemoryCache(),
     }),
   );
@@ -93,8 +104,7 @@ export enum PrimaryAction {
 }
 
 export function getPrimaryActionPreference(): PrimaryAction {
-  const val = getPrefs().primaryaction;
-  return val === PrimaryAction.Detail || val === PrimaryAction.Browser ? val : PrimaryAction.Browser;
+  return getPrefs().primaryaction === "detail" ? PrimaryAction.Detail : PrimaryAction.Browser;
 }
 
 export function getPreferPopToRootPreference(): boolean {

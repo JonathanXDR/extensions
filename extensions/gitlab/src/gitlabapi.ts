@@ -457,8 +457,8 @@ export class GitLab {
           ...options,
           headers: {
             "Content-Type": "application/json",
-            ...this.buildAuthHeaders(token),
             ...(options?.headers ?? {}),
+            ...this.buildAuthHeaders(token),
           },
           agent,
         });
