@@ -1,5 +1,21 @@
 # GitLab Changelog
 
+## [OAuth authentication] - {PR_MERGE_DATE}
+
+- Add OAuth (PKCE) authentication as an alternative to Personal Access Tokens.
+  Tokens are stored encrypted by Raycast, refreshed automatically when expired,
+  and the browser flow only runs on first use or when the refresh token is
+  revoked. Recommended for enterprise instances that auto-rotate PATs.
+- Add `Authentication` and `OAuth Application ID` preferences. The existing
+  `API Token` field is unchanged and remains the default.
+- REST and GraphQL clients now share a token resolver and transparently retry
+  once on `401 Unauthorized` after force-refreshing the OAuth access token.
+- Concurrent refresh and authorization calls are coalesced via in-memory locks,
+  so parallel requests during a token expiry trigger a single refresh request
+  and a single browser tab.
+- Add **Sign Out of GitLab** no-view command to clear the locally cached OAuth
+  tokens (useful for switching accounts or after a server-side revocation).
+
 ## [Merged MR icon in todos] - 2026-04-15
 
 - Show purple merged icon for todos on merged merge requests
